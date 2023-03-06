@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Tamagoshi.Model
 {
@@ -10,13 +9,10 @@ namespace Tamagoshi.Model
         public int Altura { get; set; } = -1;
         public int Peso { get; set; } = -1;
         public int ID { get; set; } = -1;
-
-        public string Base64Icon { get; set; } = null;
-        public string Base64Sprite { get; set; } = null;
-
+        public string IconURL { get; set; } = null;
+        public string SpriteURL { get; set; } = null;
         public string Name { get; set; } = ERROR;
         public string JapaneseName { get; set; } = ERROR;
-
         public EGrowthRate GrowthRate { get; set; } = EGrowthRate.Undefined;
         public EHabitat Habitat { get; set; } = EHabitat.Undefined;
         public string RegressTo { get; set; } = null;

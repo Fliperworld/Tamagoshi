@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="RestSharp" Version="108.0.3" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
   </ItemGroup>
 
 </Project>

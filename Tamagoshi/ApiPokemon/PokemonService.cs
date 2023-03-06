@@ -7,98 +7,133 @@ namespace Tamagoshi.ApiPokemon
 {
     internal static class PokemonService
     {
-        private const int Limit = 1279;
-        private const string ApiURL = "https://pokeapi.co/api/v2";
+        internal const string ApiBaseURL = "https://pokeapi.co/api/v2";
+        internal const string SpritesBaseURL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/";
+
         private static bool isInitialized;
 
-        private static Dictionary<string, string> PokemonsNames;
         private static RestClient ApiClient;
         static PokemonService()
         {
             isInitialized = false;
-            PokemonsNames = new Dictionary<string, string>();
-            ApiClient = new RestClient(ApiURL);
+            ApiClient = new RestClient(ApiBaseURL);
             AsyncInitialization();
         }
 
         private static async void AsyncInitialization()
         {
-            var request = new RestRequest("/pokemon", Method.Get);
-            request.AddParameter("limit",Limit);
+            int CachePokemonIDcount = CacheControl.PokemonsIDsCount;
+            int ApiPokemonIDCount = 0;
+
+            var request = new RestRequest("/pokemon/", Method.Get);
+            request.AddParameter("limit", 1);
 
             var response = await ApiClient.ExecuteAsync(request);
             if (response.IsSuccessful)
             {
                 BaseApi data = JsonSerializer.Deserialize<BaseApi>(response.Content);
-                var total = data.count;
-                var urlSize = ApiURL.Length;
-                foreach (var r in data.results)
-                    PokemonsNames.Add(r.name, r.url.Remove(0,urlSize));
-
-                while (data.next != null)
-                {
-                    response = await ApiClient.ExecuteAsync(new RestRequest(data.next.Remove(0, urlSize), Method.Get));
-                    if (!response.IsSuccessful)
-                        throw new ApiResponseException();
-                   
-                    data = JsonSerializer.Deserialize<BaseApi>(response.Content);
-                    foreach (var r in data.results)
-                        PokemonsNames.Add(r.name, r.url.Remove(0,urlSize));
-                }
-
-                if (PokemonsNames.Count != total)
-                    throw new MissmatchException();
-            
+                ApiPokemonIDCount = data.count;
             }
             else
-                throw new ApiResponseException();
+            {
+                isInitialized = true;
+                if (CachePokemonIDcount > 0)
+                    throw new MissmatchException();//can ignore
+                else
+                    throw new TamagoshiFatalException();
+            }
+
+            //NoChanges neeeded.
+            if (CachePokemonIDcount == ApiPokemonIDCount)
+            {
+                isInitialized = true;
+                return;
+            }
+
+
+            List<NameURL> names = new List<NameURL>();
+            request = new RestRequest("/pokemon/", Method.Get);
+            request.AddParameter("limit", ApiPokemonIDCount);
+            response = await ApiClient.ExecuteAsync(request);
+            if (response.IsSuccessful)
+            {
+                BaseApi data = JsonSerializer.Deserialize<BaseApi>(response.Content);
+                names.AddRange(data.results);
+            }
+
+            var inseridos = CacheControl.UpdatePokemonsIdTable(names);
 
             isInitialized = true;
-        } 
+        }
 
         internal static async Task<int> GetPokemonsApiCount()
         {
             while (!isInitialized)
                 await Task.Delay(50);
 
-            return PokemonsNames.Count;
+            return CacheControl.PokemonsIDsCount;
         }
         internal static async Task<Pokemon> GetPokemon(string name)
         {
-            while(!isInitialized)
+            while (!isInitialized)
                 await Task.Delay(50);
 
-            if (!PokemonsNames.ContainsKey(name))
+            var uri = CacheControl.GetPokemonUri(name);
+
+            if (uri == null)
                 return null;
 
-            var response = await ApiClient.ExecuteAsync(new RestRequest(PokemonsNames[name], Method.Get));
-            
+            var json = CacheControl.GetCachedJson(uri);
+            if (json != null)
+            {
+                return JsonSerializer.Deserialize<Pokemon>(json);
+            }
+
+            var response = await ApiClient.ExecuteAsync(new RestRequest(uri, Method.Get));
             if (!response.IsSuccessful)
                 throw new ApiResponseException();
+
+            CacheControl.StoreCachedJson(uri, response.Content);
 
             return JsonSerializer.Deserialize<Pokemon>(response.Content);
         }
 
         internal static async Task<PokemonEspecies> GetPokemonEspecies(string url)
         {
-            url = url.Remove(0, ApiURL.Length);
+            var uri = url.Substring(ApiBaseURL.Length);
 
-            var response = await ApiClient.ExecuteAsync(new RestRequest(url, Method.Get));
+            var json = CacheControl.GetCachedJson(uri);
+            if (json != null)
+            {
+                return JsonSerializer.Deserialize<PokemonEspecies>(json);
+            }
+
+            var response = await ApiClient.ExecuteAsync(new RestRequest(uri, Method.Get));
 
             if (!response.IsSuccessful)
                 throw new ApiResponseException();
 
+            CacheControl.StoreCachedJson(uri, response.Content);
+            
             return JsonSerializer.Deserialize<PokemonEspecies>(response.Content);
         }
 
         internal static async Task<EvolutionChain> GetPokemonEvolutionChain(string url)
         {
-            url = url.Remove(0, ApiURL.Length);
+            var uri = url.Substring(ApiBaseURL.Length);
+
+            var json = CacheControl.GetCachedJson(uri);
+            if (json != null)
+            {
+                return JsonSerializer.Deserialize<EvolutionChain>(json);
+            }
 
             var response = await ApiClient.ExecuteAsync(new RestRequest(url, Method.Get));
 
             if (!response.IsSuccessful)
                 throw new ApiResponseException();
+
+            CacheControl.StoreCachedJson(uri, response.Content);
 
             return JsonSerializer.Deserialize<EvolutionChain>(response.Content);
         }

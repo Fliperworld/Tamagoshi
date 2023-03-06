@@ -2,14 +2,19 @@
 
 namespace Tamagoshi
 {
-    internal class MissmatchException : Exception
+    public class MissmatchException : Exception
     {
         public override string Message => "Pokemons names and count missmatch !!!";
     }
 
-    internal class ApiResponseException : Exception
+    public class ApiResponseException : Exception
     {
         public override string Message => "Api Response Unsuccessful !!!";
+    }
+
+    public class TamagoshiFatalException : Exception
+    {
+        public override string Message => "Tamagoshi Fatal Exception!!!";
     }
 
 }
