@@ -9,7 +9,7 @@ namespace Test
             
             ApplicationConfiguration.Initialize();
             Console.Title = "Tamagoshi TESTS";
-            Application.Run(new Form1());
+            Application.Run(new MainForm());
         }
     }
 }

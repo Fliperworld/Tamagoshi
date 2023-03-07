@@ -4,9 +4,9 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Tamagoshi.ApiPokemon;
+using Tamagoshi.Model;
 
 namespace Tamagoshi
 {
@@ -66,6 +66,25 @@ namespace Tamagoshi
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 }
             }
+        }
+
+        internal static List<PokemonName> GetPokemonsNames()
+        {
+            List<PokemonName> ret = new List<PokemonName>();
+
+            using (var cmd = DbConnection().CreateCommand())
+            {
+                cmd.CommandText = "SELECT id,identifier FROM Pokemon_IDS";
+                SQLiteDataReader rdr = cmd.ExecuteReader();
+
+                while (rdr.Read())
+                {
+                    ret.Add(new PokemonName(rdr.GetInt32(0),rdr.GetString(1)));
+                }
+
+            }
+            return ret.Count == 0 ? null : ret;
+
         }
 
         internal static string GetPokemonUri(string pokemonName)
@@ -140,13 +159,13 @@ namespace Tamagoshi
         {
             var uri = url.Substring(PokemonService.SpritesBaseURL.Length);
             var file = Path.Combine(CacheFolder, uri);
-            if(File.Exists(file))
+            if (File.Exists(file))
                 return File.ReadAllBytes(file);
 
             var folder = Path.GetDirectoryName(file);
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
-           
+
             using (var webClient = new WebClient())
             {
                 var imageBytes = await webClient.DownloadDataTaskAsync(url);

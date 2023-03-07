@@ -8,6 +8,7 @@ namespace Tamagoshi
 {   
     public static class TamagoshiLib
     {
+        private static int PokemonIdsCount = -1;
         private static EvolvesTo[] GetEvolves(EvolvesTo evolves,string name)
         {
             if(evolves.species.name == name) return evolves.evolves_to;
@@ -19,11 +20,11 @@ namespace Tamagoshi
             }
             return null;
         }
-        private static async Task<Mascote> GetPokemonInfo(string nameOrID, EvolvesTo EvolutionList)
+        private static async Task<Mascote> GetPokemonInfo(string name, EvolvesTo EvolutionList)
         {
-            nameOrID = nameOrID.ToLower();
+            name = name.ToLower();
 
-            var pokemon = await PokemonService.GetPokemon(nameOrID);
+            var pokemon = await PokemonService.GetPokemon(name);
             
             string enName = pokemon.name;
             string jpName = pokemon.name;
@@ -50,7 +51,7 @@ namespace Tamagoshi
                 foreach (var ev in evolutions)
                 {
                     var mascoteEv = await GetPokemonInfo(ev.species.name, ev);
-                    m_evolutions.Add(mascoteEv.Name);
+                    m_evolutions.Add(mascoteEv.Name.DisplayName);
                 }
             }
 
@@ -64,16 +65,15 @@ namespace Tamagoshi
                     m_regressTo = m_en.name;
             }
 
+           
             var mascote = new Mascote()
             {
-                LowerName = pokemon.name,
                 Altura = pokemon.height,
                 Peso = pokemon.weight,
                 ID = pokemon.id,
                 IconURL = pokemon.sprites.front_default,
                 SpriteURL = pokemon.sprites.other.Official_Artwork.front_default,
-                Name = enName,
-                JapaneseName = jpName,
+                Name = new PokemonName(pokemon.id,name,enName,jpName),
                 GrowthRate = Enums.GetGrowthRate(especies.growth_rate),
                 Habitat = Enums.GetHabitat(especies.habitat),
                 RegressTo = m_regressTo,
@@ -82,9 +82,9 @@ namespace Tamagoshi
         
             return mascote;
         }
-        public static async Task<Mascote> GetPokemonInfo(string nameOrID)
+        public static async Task<Mascote> GetPokemonInfo(string name)
         {
-            return await GetPokemonInfo(nameOrID, null);
+            return await GetPokemonInfo(name, null);
         }
         public static async Task<byte[]> GetMascoteIcon(Mascote mascote)
         {
@@ -96,7 +96,16 @@ namespace Tamagoshi
         }
         public static async Task<int> LoadAndGetPokemonsCount()
         {
-            return await PokemonService.GetPokemonsApiCount();
+            if(PokemonIdsCount == -1)
+                PokemonIdsCount = await PokemonService.GetPokemonsApiCount();
+            return PokemonIdsCount;
+        }
+        public static async Task<List<PokemonName>> GetPokemonsNames()
+        {
+            if (PokemonIdsCount == -1)
+                PokemonIdsCount = await PokemonService.GetPokemonsApiCount();
+
+            return CacheControl.GetPokemonsNames();
         }
 
     }

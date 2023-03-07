@@ -5,14 +5,12 @@ namespace Tamagoshi.Model
     public class Mascote
     {
         private const string ERROR = "error";
-        public string LowerName { get; set; } = ERROR;
         public int Altura { get; set; } = -1;
         public int Peso { get; set; } = -1;
         public int ID { get; set; } = -1;
         public string IconURL { get; set; } = null;
         public string SpriteURL { get; set; } = null;
-        public string Name { get; set; } = ERROR;
-        public string JapaneseName { get; set; } = ERROR;
+        public PokemonName Name { get; set; } = null;
         public EGrowthRate GrowthRate { get; set; } = EGrowthRate.Undefined;
         public EHabitat Habitat { get; set; } = EHabitat.Undefined;
         public string RegressTo { get; set; } = null;
@@ -30,7 +28,7 @@ namespace Tamagoshi.Model
             string s = RegressTo == null ? "Morte" : RegressTo;
             string[] Lines = new string[]
             {
-            $"Nome: {Name} ({JapaneseName})",
+            $"Nome: {Name}",
             $"Altura: {Altura}",
             $"Peso: {Peso}",
             $"Velocidade de Crescimento: {GrowthRate}",
